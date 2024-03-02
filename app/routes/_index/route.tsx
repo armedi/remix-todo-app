@@ -9,27 +9,22 @@ import TodoList from "~/routes/_index/TodoList";
 import { Quote, TodoItem } from "~/types/todo";
 import TodoInput from "./TodoInput";
 
+let lastTodoId = 0;
+let todos: TodoItem[] = [];
+let quote: Quote | null = null;
+
 export const meta: MetaFunction = () => {
   return [{ title: "Todo App" }];
 };
 
-const data: { todos: TodoItem[]; quote: Quote | null } = {
-  todos: [
-    { id: 1, text: "Eat", completed: true },
-    { id: 2, text: "Sleep", completed: false },
-    { id: 3, text: "Repeat", completed: false },
-  ],
-  quote: null,
-};
-
 export const clientLoader = async () => {
-  if (!data.quote) {
-    data.quote = await fetch("https://api.quotable.io/quotes/random")
+  if (!quote) {
+    quote = await fetch("https://api.quotable.io/quotes/random")
       .then((res) => res.json())
       .then((quotes) => quotes[0]);
   }
 
-  return { todos: data.todos, quote: data.quote! };
+  return { todos, quote: quote! };
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
@@ -37,29 +32,35 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const intent = requestJson.intent;
 
   switch (intent) {
+    case "add": {
+      const newTodo = {
+        id: ++lastTodoId,
+        text: requestJson.text,
+        completed: false,
+      };
+      todos = [...todos, newTodo];
+      break;
+    }
     case "toggle-complete": {
       const todoId = requestJson.todoId;
-      const foundIndex = data.todos.findIndex((todo) => todo.id === todoId);
+      const foundIndex = todos.findIndex((todo) => todo.id === todoId);
       if (foundIndex !== -1) {
-        data.todos = [
-          ...data.todos.slice(0, foundIndex),
+        todos = [
+          ...todos.slice(0, foundIndex),
           {
-            ...data.todos[foundIndex],
-            completed: !data.todos[foundIndex].completed,
+            ...todos[foundIndex],
+            completed: !todos[foundIndex].completed,
           },
-          ...data.todos.slice(foundIndex + 1),
+          ...todos.slice(foundIndex + 1),
         ];
       }
       break;
     }
     case "delete": {
       const todoId = requestJson.todoId;
-      const foundIndex = data.todos.findIndex((todo) => todo.id === todoId);
+      const foundIndex = todos.findIndex((todo) => todo.id === todoId);
       if (foundIndex !== -1) {
-        data.todos = [
-          ...data.todos.slice(0, foundIndex),
-          ...data.todos.slice(foundIndex + 1),
-        ];
+        todos = [...todos.slice(0, foundIndex), ...todos.slice(foundIndex + 1)];
       }
       break;
     }
@@ -80,7 +81,20 @@ export default function Index() {
         todos
       </h1>
       <div className="mb-8 bg-white rounded">
-        <TodoInput />
+        <TodoInput
+          onKeyDown={(event) => {
+            if (event.code === "Enter") {
+              submit(
+                {
+                  intent: "add",
+                  text: event.currentTarget.value,
+                },
+                { method: "post", encType: "application/json" }
+              );
+              event.currentTarget.value = "";
+            }
+          }}
+        />
         <TodoList
           todos={todos}
           onDelete={(todoId) => {
