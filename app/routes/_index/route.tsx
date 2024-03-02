@@ -1,8 +1,13 @@
 import type { MetaFunction } from "@remix-run/node";
-import { ClientActionFunctionArgs, useLoaderData } from "@remix-run/react";
+import {
+  ClientActionFunctionArgs,
+  useLoaderData,
+  useSubmit,
+} from "@remix-run/react";
 
 import TodoList from "~/routes/_index/TodoList";
 import { Quote, TodoItem } from "~/types/todo";
+import TodoInput from "./TodoInput";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Todo App" }];
@@ -67,14 +72,38 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
 export default function Index() {
   const { quote, todos } = useLoaderData<typeof clientLoader>();
+  const submit = useSubmit();
 
   return (
     <main className="mx-auto max-w-lg p-9">
       <h1 className="text-center text-orange-700 text-7xl font-extralight tracking-tight mb-8">
         todos
       </h1>
-      <TodoList todos={todos} />
-      <blockquote className="p-4 mt-12 border-s-4 border-gray-300 bg-white dark:border-gray-500 dark:bg-gray-800">
+      <div className="mb-8 bg-white rounded">
+        <TodoInput />
+        <TodoList
+          todos={todos}
+          onDelete={(todoId) => {
+            submit(
+              {
+                intent: "delete",
+                todoId,
+              },
+              { method: "post", encType: "application/json" }
+            );
+          }}
+          onToggleComplete={(todoId) => {
+            submit(
+              {
+                intent: "toggle-complete",
+                todoId,
+              },
+              { method: "post", encType: "application/json" }
+            );
+          }}
+        />
+      </div>
+      <blockquote className="p-4 border-s-4 border-gray-300 bg-white dark:border-gray-500 dark:bg-gray-800">
         <p className="italic font-medium leading-relaxed text-gray-900 dark:text-white">
           &quot;{quote.content}&quot;
         </p>
