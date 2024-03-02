@@ -56,6 +56,21 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
       }
       break;
     }
+    case "edit": {
+      const todoId = requestJson.todoId;
+      const foundIndex = todos.findIndex((todo) => todo.id === todoId);
+      if (foundIndex !== -1) {
+        todos = [
+          ...todos.slice(0, foundIndex),
+          {
+            ...todos[foundIndex],
+            text: requestJson.newText,
+          },
+          ...todos.slice(foundIndex + 1),
+        ];
+      }
+      break;
+    }
     case "delete": {
       const todoId = requestJson.todoId;
       const foundIndex = todos.findIndex((todo) => todo.id === todoId);
@@ -97,11 +112,12 @@ export default function Index() {
         />
         <TodoList
           todos={todos}
-          onDelete={(todoId) => {
+          onEdit={(todoId, newText) => {
             submit(
               {
-                intent: "delete",
+                intent: "edit",
                 todoId,
+                newText,
               },
               { method: "post", encType: "application/json" }
             );
@@ -110,6 +126,15 @@ export default function Index() {
             submit(
               {
                 intent: "toggle-complete",
+                todoId,
+              },
+              { method: "post", encType: "application/json" }
+            );
+          }}
+          onDelete={(todoId) => {
+            submit(
+              {
+                intent: "delete",
                 todoId,
               },
               { method: "post", encType: "application/json" }

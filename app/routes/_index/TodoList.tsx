@@ -3,6 +3,7 @@ import TodoListItem from "./TodoListItem";
 
 export type TodoProps = {
   todos: TodoItemData[];
+  onEdit: (todoId: number, newText: string) => void;
   onToggleComplete: (todoId: number) => void;
   onDelete: (todoId: number) => void;
 };
@@ -17,11 +18,14 @@ export default function TodoList(props: TodoProps) {
         >
           <TodoListItem
             data={todo}
-            onDelete={() => {
-              props.onDelete(todo.id);
+            onEdit={(newText) => {
+              props.onEdit(todo.id, newText);
             }}
             onToggleComplete={() => {
               props.onToggleComplete(todo.id);
+            }}
+            onDelete={() => {
+              props.onDelete(todo.id);
             }}
           />
         </li>
