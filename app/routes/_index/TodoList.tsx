@@ -1,3 +1,6 @@
+import React from "react";
+import { CSSTransition, TransitionGroup } from "react-transition-group";
+
 import { TodoItem as TodoItemData } from "~/types/todo";
 import TodoListItem from "./TodoListItem";
 
@@ -10,26 +13,43 @@ export type TodoProps = {
 
 export default function TodoList(props: TodoProps) {
   return (
-    <ul>
-      {props.todos.map((todo) => (
-        <li
-          key={todo.id}
-          className="[&:first-child]:border-t [&:not(:last-child)]:border-b"
-        >
-          <TodoListItem
-            data={todo}
-            onEdit={(newText) => {
-              props.onEdit(todo.id, newText);
+    <TransitionGroup component="ul">
+      {props.todos.map((todo) => {
+        const nodeRef = React.createRef<HTMLLIElement>();
+        
+        return (
+          <CSSTransition
+            key={todo.id}
+            nodeRef={nodeRef}
+            timeout={300}
+            classNames={{
+              exit: "h-12 opacity-100 transition-all duration-300",
+              exitActive: "h-0 opacity-0",
             }}
-            onToggleComplete={() => {
-              props.onToggleComplete(todo.id);
+            onExiting={() => {
+              nodeRef.current?.classList.remove("h-12", "opacity-100");
             }}
-            onDelete={() => {
-              props.onDelete(todo.id);
-            }}
-          />
-        </li>
-      ))}
-    </ul>
+          >
+            <li
+              ref={nodeRef}
+              className="[&:first-child]:border-t [&:not(:last-child)]:border-b"
+            >
+              <TodoListItem
+                data={todo}
+                onEdit={(newText) => {
+                  props.onEdit(todo.id, newText);
+                }}
+                onToggleComplete={() => {
+                  props.onToggleComplete(todo.id);
+                }}
+                onDelete={() => {
+                  props.onDelete(todo.id);
+                }}
+              />
+            </li>
+          </CSSTransition>
+        );
+      })}
+    </TransitionGroup>
   );
 }
