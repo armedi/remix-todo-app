@@ -2,16 +2,21 @@ import type { MetaFunction } from "@remix-run/node";
 import {
   ClientActionFunctionArgs,
   useLoaderData,
+  useSearchParams,
   useSubmit,
 } from "@remix-run/react";
+import Fuse from "fuse.js";
+import { useMemo } from "react";
 
-import TodoList from "~/routes/_index/TodoList";
-import { Quote, TodoItem } from "~/types/todo";
+import { Quote as QuoteData, TodoItem } from "~/types";
+import Quote from "./Quote";
 import TodoInput from "./TodoInput";
+import TodoList from "./TodoList";
+import TodoSearchBox from "./TodoSearchBox";
 
 let lastTodoId = 0;
 let todos: TodoItem[] = [];
-let quote: Quote | null = null;
+let quote: QuoteData | null = null;
 
 export const meta: MetaFunction = () => {
   return [{ title: "Todo App" }];
@@ -90,6 +95,14 @@ export default function Index() {
   const { quote, todos } = useLoaderData<typeof clientLoader>();
   const submit = useSubmit();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const fuse = useMemo(() => new Fuse(todos, { keys: ["text"] }), [todos]);
+  const searchKey = searchParams.get("q") ?? "";
+
+  const displayedTodos = searchKey
+    ? fuse.search(searchKey).map((result) => result.item)
+    : todos;
+
   return (
     <main className="mx-auto max-w-lg p-9">
       <h1 className="text-center text-orange-700 text-7xl font-extralight tracking-tight mb-8">
@@ -97,6 +110,7 @@ export default function Index() {
       </h1>
       <div className="mb-8 bg-white rounded">
         <TodoInput
+          className="border-b"
           onKeyDown={(event) => {
             if (event.code === "Enter") {
               submit(
@@ -107,11 +121,23 @@ export default function Index() {
                 { method: "post", encType: "application/json" }
               );
               event.currentTarget.value = "";
+              requestIdleCallback(() => {
+                setSearchParams((prev) => {
+                  prev.delete("q");
+                  return prev;
+                });
+              });
             }
           }}
         />
+        <TodoSearchBox
+          value={searchKey ?? ""}
+          onChange={(value) => {
+            setSearchParams({ q: value });
+          }}
+        />
         <TodoList
-          todos={todos}
+          todos={displayedTodos}
           onEdit={(todoId, newText) => {
             submit(
               {
@@ -142,14 +168,7 @@ export default function Index() {
           }}
         />
       </div>
-      <blockquote className="p-4 border-s-4 border-gray-300 bg-white dark:border-gray-500 dark:bg-gray-800">
-        <p className="italic font-medium leading-relaxed text-gray-900 dark:text-white">
-          &quot;{quote.content}&quot;
-        </p>
-        <cite className="block text-right text-gray-500 dark:text-gray-400">
-          &mdash; {quote.author}
-        </cite>
-      </blockquote>
+      <Quote {...quote} />
     </main>
   );
 }

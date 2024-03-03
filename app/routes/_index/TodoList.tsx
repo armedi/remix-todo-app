@@ -1,7 +1,7 @@
 import React from "react";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 
-import { TodoItem as TodoItemData } from "~/types/todo";
+import { TodoItem as TodoItemData } from "~/types";
 import TodoListItem from "./TodoListItem";
 
 export type TodoProps = {

@@ -1,7 +1,7 @@
 import { XMarkIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { useRef, useState } from "react";
 
-import { TodoItem as TodoItemData } from "~/types/todo";
+import { TodoItem as TodoItemData } from "~/types";
 import TodoInput from "./TodoInput";
 
 export type TodoListItemProps = {
